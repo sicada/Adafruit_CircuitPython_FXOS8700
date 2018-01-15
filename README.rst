@@ -2,43 +2,27 @@
 Introduction
 ============
 
-.. image:: https://readthedocs.org/projects/adafruit-circuitpython-fxos8700/badge/?version=latest
-    :target: https://circuitpython.readthedocs.io/projects/fxos8700/en/latest/
-    :alt: Documentation Status
+(Vanilla) Python module for the NXP FXAS21002C gyroscope.
 
-.. image :: https://img.shields.io/discord/327254708534116352.svg
-    :target: https://discord.gg/nBQh6qu
-    :alt: Discord
+Intended for use with Beaglebone or similar platforms
+which contain a standard CPython implementation and I2C
+bus access through standard Linux OS facilities.
 
-CircuitPython module for the NXP FXOS8700 accelerometer and magnetometer.
+Based on the original Adafruit FXOS8700 C/C++ driver from:
+https://github.com/adafruit/Adafruit_FXOS8700
 
 Dependencies
 =============
-This driver depends on:
 
-* `Adafruit CircuitPython <https://github.com/adafruit/circuitpython>`_
-* `Bus Device <https://github.com/adafruit/Adafruit_CircuitPython_BusDevice>`_
+This driver depends on nothing outside of a typical Python installation,
+since it includes the minimal components of the following libraries
+required for the lower-level I2C interfacing:
 
-Please ensure all dependencies are available on the CircuitPython filesystem.
-This is easily achieved by downloading
-`the Adafruit library and driver bundle <https://github.com/adafruit/Adafruit_CircuitPython_Bundle>`_.
+- Adafruit_GPIO (https://github.com/adafruit/Adafruit_Python_GPIO)
+- Adafruit_PureIO (https://github.com/adafruit/Adafruit_Python_PureIO)
+
 
 Usage Example
 =============
 
-See examples/simpletest.py for a demo of the usage.
-
-Contributing
-============
-
-Contributions are welcome! Please read our `Code of Conduct
-<https://github.com/adafruit/Adafruit_CircuitPython_fxos8700/blob/master/CODE_OF_CONDUCT.md>`_
-before contributing to help this project stay welcoming.
-
-API Reference
-=============
-
-.. toctree::
-   :maxdepth: 2
-
-   api
+See examples/simpletest.py for an example of the usage.

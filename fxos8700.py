@@ -1,6 +1,9 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2017 Tony DiCola for Adafruit Industries
+# Copyright for portions of this work are held by:
+#       Tony DiCola for Adafruit Industries - Copyright (c) 2017
+# Copyright for portions of this work are held by:
+#       Nick Viera for Sicada Co. - Copyright (c) 2018
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,59 +22,60 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+
 """
-`adafruit_fxos8700`
-====================================================
+==============================================================================
+Python module for the NXP FXOS8700 Gyroscope.
 
-CircuitPython module for the NXP FXOS8700 accelerometer and magnetometer.
-Based on the driver from:
-  https://github.com/adafruit/Adafruit_FXOS8700
+    Intended for use with Beaglebone or similar platforms
+    which contain a standard CPython implementation and I2C
+    bus access through standard Linux OS facilities.
 
-See examples/simpletest.py for a demo of the usage.
-
-* Author(s): Tony DiCola
+    Based on the original C/C++ driver from:
+    https://github.com/adafruit/Adafruit_FXOS8700
+==============================================================================
 """
+
 try:
     import ustruct as struct
 except ImportError:
     import struct
 
-import adafruit_bus_device.i2c_device as i2c_device
-from micropython import const
+import Adafruit_libs.I2C as I2C
 
 # Register addresses and other constants:
 # pylint: disable=bad-whitespace
-_FXOS8700_ADDRESS               = const(0x1F)   # 0011111
-_FXOS8700_ID                    = const(0xC7)   # 1100 0111
-_FXOS8700_REGISTER_STATUS       = const(0x00)
-_FXOS8700_REGISTER_OUT_X_MSB    = const(0x01)
-_FXOS8700_REGISTER_OUT_X_LSB    = const(0x02)
-_FXOS8700_REGISTER_OUT_Y_MSB    = const(0x03)
-_FXOS8700_REGISTER_OUT_Y_LSB    = const(0x04)
-_FXOS8700_REGISTER_OUT_Z_MSB    = const(0x05)
-_FXOS8700_REGISTER_OUT_Z_LSB    = const(0x06)
-_FXOS8700_REGISTER_WHO_AM_I     = const(0x0D)   # 11000111   r
-_FXOS8700_REGISTER_XYZ_DATA_CFG = const(0x0E)
-_FXOS8700_REGISTER_CTRL_REG1    = const(0x2A)   # 00000000   r/w
-_FXOS8700_REGISTER_CTRL_REG2    = const(0x2B)   # 00000000   r/w
-_FXOS8700_REGISTER_CTRL_REG3    = const(0x2C)   # 00000000   r/w
-_FXOS8700_REGISTER_CTRL_REG4    = const(0x2D)   # 00000000   r/w
-_FXOS8700_REGISTER_CTRL_REG5    = const(0x2E)   # 00000000   r/w
-_FXOS8700_REGISTER_MSTATUS      = const(0x32)
-_FXOS8700_REGISTER_MOUT_X_MSB   = const(0x33)
-_FXOS8700_REGISTER_MOUT_X_LSB   = const(0x34)
-_FXOS8700_REGISTER_MOUT_Y_MSB   = const(0x35)
-_FXOS8700_REGISTER_MOUT_Y_LSB   = const(0x36)
-_FXOS8700_REGISTER_MOUT_Z_MSB   = const(0x37)
-_FXOS8700_REGISTER_MOUT_Z_LSB   = const(0x38)
-_FXOS8700_REGISTER_MCTRL_REG1   = const(0x5B)   # 00000000   r/w
-_FXOS8700_REGISTER_MCTRL_REG2   = const(0x5C)   # 00000000   r/w
-_FXOS8700_REGISTER_MCTRL_REG3   = const(0x5D)   # 00000000   r/w
-_ACCEL_MG_LSB_2G                = 0.000244
-_ACCEL_MG_LSB_4G                = 0.000488
-_ACCEL_MG_LSB_8G                = 0.000976
-_MAG_UT_LSB                     = 0.1
-_SENSORS_GRAVITY_STANDARD       = 9.80665
+_FXOS8700_ADDRESS = 0x1F  # 0011111
+_FXOS8700_ID = 0xC7  # 1100 0111
+_FXOS8700_REGISTER_STATUS = 0x00
+_FXOS8700_REGISTER_OUT_X_MSB = 0x01
+_FXOS8700_REGISTER_OUT_X_LSB = 0x02
+_FXOS8700_REGISTER_OUT_Y_MSB = 0x03
+_FXOS8700_REGISTER_OUT_Y_LSB = 0x04
+_FXOS8700_REGISTER_OUT_Z_MSB = 0x05
+_FXOS8700_REGISTER_OUT_Z_LSB = 0x06
+_FXOS8700_REGISTER_WHO_AM_I = 0x0D  # 11000111   r
+_FXOS8700_REGISTER_XYZ_DATA_CFG = 0x0E
+_FXOS8700_REGISTER_CTRL_REG1 = 0x2A  # 00000000   r/w
+_FXOS8700_REGISTER_CTRL_REG2 = 0x2B  # 00000000   r/w
+_FXOS8700_REGISTER_CTRL_REG3 = 0x2C  # 00000000   r/w
+_FXOS8700_REGISTER_CTRL_REG4 = 0x2D  # 00000000   r/w
+_FXOS8700_REGISTER_CTRL_REG5 = 0x2E  # 00000000   r/w
+_FXOS8700_REGISTER_MSTATUS = 0x32
+_FXOS8700_REGISTER_MOUT_X_MSB = 0x33
+_FXOS8700_REGISTER_MOUT_X_LSB = 0x34
+_FXOS8700_REGISTER_MOUT_Y_MSB = 0x35
+_FXOS8700_REGISTER_MOUT_Y_LSB = 0x36
+_FXOS8700_REGISTER_MOUT_Z_MSB = 0x37
+_FXOS8700_REGISTER_MOUT_Z_LSB = 0x38
+_FXOS8700_REGISTER_MCTRL_REG1 = 0x5B  # 00000000   r/w
+_FXOS8700_REGISTER_MCTRL_REG2 = 0x5C  # 00000000   r/w
+_FXOS8700_REGISTER_MCTRL_REG3 = 0x5D  # 00000000   r/w
+_ACCEL_MG_LSB_2G = 0.000244
+_ACCEL_MG_LSB_4G = 0.000488
+_ACCEL_MG_LSB_8G = 0.000976
+_MAG_UT_LSB = 0.1
+_SENSORS_GRAVITY_STANDARD = 9.80665
 # pylint: enable=bad-whitespace
 
 # User-facing constants/module-level globals:
@@ -95,11 +99,11 @@ class FXOS8700:
     # thread safe!
     _BUFFER = bytearray(13)
 
-    def __init__(self, i2c, address=_FXOS8700_ADDRESS,
+    def __init__(self, i2c_bus, address=_FXOS8700_ADDRESS,
                  accel_range=ACCEL_RANGE_2G):
         assert accel_range in (ACCEL_RANGE_2G, ACCEL_RANGE_4G, ACCEL_RANGE_8G)
         self._accel_range = accel_range
-        self._device = i2c_device.I2CDevice(i2c, address)
+        self._device = I2C.Device(address, i2c_bus)
         # Check for chip ID value.
         if self._read_u8(_FXOS8700_REGISTER_WHO_AM_I) != _FXOS8700_ID:
             raise RuntimeError('Failed to find FXOS8700, check wiring!')
@@ -123,18 +127,14 @@ class FXOS8700:
 
     def _read_u8(self, address):
         # Read an 8-bit unsigned value from the specified 8-bit address.
-        with self._device as i2c:
-            self._BUFFER[0] = address & 0xFF
-            i2c.write(self._BUFFER, end=1, stop=False)
-            i2c.readinto(self._BUFFER, end=1)
-        return self._BUFFER[0]
+        address = address & 0xFF
+        return self._device.readU8(address)
 
     def _write_u8(self, address, val):
         # Write an 8-bit unsigned value to the specified 8-bit address.
-        with self._device as i2c:
-            self._BUFFER[0] = address & 0xFF
-            self._BUFFER[1] = val & 0xFF
-            i2c.write(self._BUFFER, end=2)
+        address = address & 0xFF
+        val = val & 0xFF
+        return self._device.write8(address, val)
 
     def read_raw_accel_mag(self):
         """Read the raw accelerometer and magnetometer readings.  Returns a
@@ -145,10 +145,8 @@ class FXOS8700:
         consider using the accelerometer and magnetometer properties!
         """
         # Read accelerometer data from sensor.
-        with self._device as i2c:
-            self._BUFFER[0] = _FXOS8700_REGISTER_OUT_X_MSB
-            i2c.write(self._BUFFER, end=1, stop=False)
-            i2c.readinto(self._BUFFER, end=6)
+        self._BUFFER = self._device.readList(_FXOS8700_REGISTER_OUT_X_MSB, 6)
+
         accel_raw_x = struct.unpack_from('>H', self._BUFFER[0:2])[0]
         accel_raw_y = struct.unpack_from('>H', self._BUFFER[2:4])[0]
         accel_raw_z = struct.unpack_from('>H', self._BUFFER[4:6])[0]
@@ -157,12 +155,11 @@ class FXOS8700:
         accel_raw_x = _twos_comp(accel_raw_x >> 2, 14)
         accel_raw_y = _twos_comp(accel_raw_y >> 2, 14)
         accel_raw_z = _twos_comp(accel_raw_z >> 2, 14)
+
         # Read magnetometer data from sensor.  No need to convert as this is
         # 16-bit signed data so struct parsing can handle it directly.
-        with self._device as i2c:
-            self._BUFFER[0] = _FXOS8700_REGISTER_MOUT_X_MSB
-            i2c.write(self._BUFFER, end=1, stop=False)
-            i2c.readinto(self._BUFFER, end=6)
+        self._BUFFER = self._device.readList(_FXOS8700_REGISTER_MOUT_X_MSB, 6)
+
         mag_raw_x = struct.unpack_from('>h', self._BUFFER[0:2])[0]
         mag_raw_y = struct.unpack_from('>h', self._BUFFER[2:4])[0]
         mag_raw_z = struct.unpack_from('>h', self._BUFFER[4:6])[0]
